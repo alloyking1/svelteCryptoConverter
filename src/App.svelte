@@ -1,44 +1,42 @@
 <script>
   import { fly, fade } from "svelte/transition";
-  let hasError = false;
-  let isSuccessVisible = false;
-  let submitted = false;
+  import Modal, { getModal } from "./Modal.svelte";
 
-  let amount = "";
+  let amount;
   let baseCoin;
   let convertCoin;
-
-  const errMessage = "All the fields are mandatory";
+  let result;
 
   function handleSubmit(e) {
-    isSuccessVisible = true;
     conversion(amount, baseCoin, convertCoin);
   }
 
-  function conversion(amount, baseCoin, convertCoin) {
-    console.log(baseCoin);
-    console.log(convertCoin);
-    console.log(amount);
+  async function conversion(amount, baseCoin, convertCoin) {
+    const call = await fetch(
+      "http://localhost:1337/my-crypto-converter/convert",
+      {
+        method: "POST",
+
+        body: JSON.stringify({
+          baseCoin: baseCoin,
+          compareCoin: convertCoin,
+          amount: amount,
+        }),
+
+        headers: {
+          "Content-type": "application/json; charset=UTF-8",
+        },
+      }
+    );
+    result = await call.json();
+    //opens modal
+    getModal().open();
   }
 </script>
 
-<h2>Take survey</h2>
-
-{#if hasError == true}
-  <p class="error-alert">{errMessage}</p>
-{:else if isSuccessVisible}
-  <p class="error-alert" transition:fade={{ duration: 150 }}>
-    Data updated successfully
-  </p>
-{/if}
-
 <div class="container">
-  <form
-    id="surveyForm"
-    class="mt-4"
-    class:submitted
-    on:submit|preventDefault={handleSubmit}
-  >
+  <h1>Crypto converter</h1>
+  <form id="surveyForm" class="mt-4" on:submit|preventDefault={handleSubmit}>
     <div class="form-group">
       <label for="baseCoin">Choose base currency:</label>
       <select name="baseCoin" bind:value={baseCoin}>
@@ -69,21 +67,25 @@
       />
     </div>
 
-    <button class="btn btn-full" on:click={() => (submitted = true)}
-      >Convert</button
-    >
+    <button class="btn btn-full">Convert</button>
   </form>
+
+  <Modal>
+    <h4>Result!!</h4>
+    <h3>
+      <small>You will get</small>
+      {result} <small>in</small>
+      {convertCoin}
+    </h3>
+  </Modal>
 </div>
 
-<!-- <link
-  href="https://gist.githubusercontent.com/Ajax30/08899d40e16069cd517b9756dc900acc/raw/04e4f9997245df079fa8500690d1878311115b20/global.css"
-  rel="stylesheet"
-  crossorigin="anonymous"
-/> -->
+<!-- the modal without an `id` -->
 <style>
   .container {
     max-width: 1200px;
     margin: 0 auto;
+    margin-top: 8rem;
   }
 
   h2 {
